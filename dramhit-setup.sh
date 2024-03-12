@@ -114,6 +114,18 @@ clone_incrementer() {
   fi
 }
 
+clone_kmer() {
+  if [ ! -d ${MOUNT_DIR}/Kmer ]; then
+    record_log "Cloning kmer"
+    pushd ${MOUNT_DIR}
+    git clone https://github.com/jerryidk/Kmer.git
+    popd;
+  else
+    record_log "Kmer not empty"
+  fi
+}
+
+
 clone_dramhit() {
   if [ ! -d ${MOUNT_DIR}/dramhit ]; then
     record_log "Cloning dramhit..."
@@ -190,6 +202,7 @@ clone_repos() {
   clone_chtkc
   download_datasets
   download_sratoolkit
+  clone_kmer
 }
 
 ## Build
