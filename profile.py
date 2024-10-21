@@ -1,5 +1,10 @@
-"""KSplit evaluation"""
+"""
+DRAMhit
 
+
+Instructions:
+Nothing to do here, look into .sh if you would like
+"""	  
 # Import the Portal object.
 import geni.portal as portal
 # Import the ProtoGENI library.
