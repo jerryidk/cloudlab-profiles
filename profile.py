@@ -1,9 +1,9 @@
 """
-Jerry's Custom cloudlab set up 
+Jerry's Custom CloudLab Setup
 
 Instructions:
 Nothing to do here, look into .sh if you would like
-"""	  
+"""
 # Import the Portal object.
 import geni.portal as portal
 # Import the ProtoGENI library.
@@ -15,12 +15,20 @@ pc = portal.Context()
 # Create a Request object to start building the RSpec.
 request = pc.makeRequestRSpec()
 
-node_0 = request.RawPC('node-0')
-node_0.hardware_type = 'c220g5' # CHANGE ME 
-node_0.disk_image = 'urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU20-64-STD'
+# Function to create a node
+def create_node(request, node_name, hardware_type):
+    node = request.RawPC(node_name)
+    node.hardware_type = hardware_type
+    node.disk_image = 'urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU20-64-STD'
+    node.addService(pg.Execute(shell="sh", command="/local/repository/setup.sh"))
+    return node
 
-# Install and execute a script that is contained in the repository.
-node_0.addService(pg.Execute(shell="sh", command="/local/repository/setup.sh"))
+# Array of hardware types
+hardware_types = ['c220g5', 'c220g2']
 
-# Print the generated rspec
+# Create nodes based on hardware types
+for i, hw_type in enumerate(hardware_types):
+    create_node(request, f'node-{i}', hw_type)
+
+# Print the generated RSpec
 pc.printRequestRSpec(request)
