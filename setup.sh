@@ -15,7 +15,7 @@ sudo mount /dev/sda4 ${MOUNT_DIR}
 
 # set up fs for user
 sudo mkdir -p ${MOUNT_DIR}/users/${USER}
-sudo mount -o bind ${MOUNT_DIR}/users/${USER} /users/${USER}
+#sudo mount -o bind ${MOUNT_DIR}/users/${USER} /users/${USER}
 
 # set up fs for nix
 sudo mkdir -p /nix
