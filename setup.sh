@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# sda4 is the disk. need to set this up as MOUNT_DIR 
+# Note: cloudlab boot user with 16GB boot partiiton
+# sda4 has more storage, need to set this up as MOUNT_DIR 
 MOUNT_DIR=/opt/mnt
 USER=jerryidk # CHANGE ME
 
@@ -24,4 +25,9 @@ sudo apt update
 sudo mkdir -p /nix
 sudo mkdir -p ${MOUNT_DIR}/nix
 sudo mount -o bind ${MOUNT_DIR}/nix /nix
-sh <(curl -L https://nixos.org/nix/install) --daemon
+yes | sh <(curl -L https://nixos.org/nix/install) --daemon
+
+# OPTIONAL bind apt directory so it doesn't run out space
+#sudo mount --bind ${MOUNT_DIR} /var/lib/dpkg
+#sudo mount --bind ${MOUNT_DIR} /var/lib/apt
+#sudo mount --bind ${MOUNT_DIR} /usr/lib/apt
