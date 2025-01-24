@@ -22,13 +22,16 @@ sudo chown -R ${USER} ${MOUNT_DIR}
 # update apt just in case  
 sudo apt update
 
-# OPTIONAL install nix.
+# install nix.
 sudo mkdir -p /nix
 sudo mkdir -p ${MOUNT_DIR}/nix
 sudo mount -o bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
-# OPTIONAL bind apt directory so it doesn't run out space
-# sudo mount --bind ${MOUNT_DIR} /var/lib/dpkg
-# sudo mount --bind ${MOUNT_DIR} /var/lib/apt
-# sudo mount --bind ${MOUNT_DIR} /usr/lib/apt
+# direnv
+sudo apt install direnv
+echo "eval $(direnv hook bash)" >> ~/.bashrc 
+
+cd ${MOUNT_DIR}
+git clone https://github.com/mars-research/DRAMHiT.git
+
