@@ -2,7 +2,7 @@
 
 # Note: cloudlab boot user with 16GB boot partiiton
 # sda4 has more storage, need to set this up as MOUNT_DIR 
-MOUNT_DIR=/opt/mnt
+MOUNT_DIR=/opt
 USER=jerryidk # CHANGE ME
 DISK=/dev/nvme0n1p4 # CHANGE ME
 
@@ -27,6 +27,11 @@ sudo mkdir -p /nix
 sudo mkdir -p ${MOUNT_DIR}/nix
 sudo mount -o bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
+
+# set up nix 
+sudo mkdir -p ~/.config/nix
+touch ~/.config/nix/nix.conf
+echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 
 # direnv
 sudo apt install direnv
