@@ -24,9 +24,8 @@ sudo apt update
 
 # install nix.
 sudo mkdir -p /nix
-sudo mount ${DISK} /nix
-#sudo mkdir -p ${MOUNT_DIR}/nix
-#sudo mount -o bind ${MOUNT_DIR}/nix /nix
+sudo mkdir -p ${MOUNT_DIR}/nix
+sudo mount -o bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
 # set up nix 
