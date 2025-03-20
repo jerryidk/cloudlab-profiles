@@ -24,8 +24,9 @@ sudo apt update
 
 # install nix.
 sudo mkdir -p /nix
-sudo mkdir -p ${MOUNT_DIR}/nix
-sudo mount -o bind ${MOUNT_DIR}/nix /nix
+sudo mount ${DISK} /nix
+#sudo mkdir -p ${MOUNT_DIR}/nix
+#sudo mount -o bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
 # set up nix 
@@ -38,5 +39,11 @@ sudo apt install direnv
 echo "eval $(direnv hook bash)" >> ~/.bashrc 
 
 cd ${MOUNT_DIR}
-git clone https://github.com/mars-research/DRAMHiT.git
+git clone git@github.com:mars-research/DRAMHiT.git --recursive
 
+cd ${MOUNT_DIR}/DRAMHiT/tools/msr-safe
+make 
+sudo insmod msr-safe.ko
+
+cd ${MOUNT_DIR}/DRAMHiT/
+sudo ./scripts/setup.sh
