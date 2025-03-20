@@ -30,15 +30,15 @@ yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
 # set up nix 
 sudo mkdir -p ~/.config/nix
-touch ~/.config/nix/nix.conf
-echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
+sudo touch ~/.config/nix/nix.conf
+sudo echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
 
 # direnv
 sudo apt install direnv
-echo "eval $(direnv hook bash)" >> ~/.bashrc 
+sudo echo "eval $(direnv hook bash)" >> ~/.bashrc 
 
 cd ${MOUNT_DIR}
-git clone git@github.com:mars-research/DRAMHiT.git --recursive
+git clone https://github.com/mars-research/DRAMHiT.git --recursive
 
 cd ${MOUNT_DIR}/DRAMHiT/tools/msr-safe
 make 
