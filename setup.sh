@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -e
 # Note: cloudlab boot user with 16GB boot partiiton
 # sda4 has more storage, need to set this up as MOUNT_DIR 
 MOUNT_DIR=/opt
@@ -25,8 +26,12 @@ yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
 sudo mkdir -p ${MOUNT_DIR}/${USER}
 sudo chown -R ${USER} ${MOUNT_DIR}
+rsync -a --progress users/${USER} ${MOUNT_DIR}/${USER}
+sudo rm -rf users/${USER}
+sudo mkdir -p users/${USER}
+sudo mount --bind ${MOUNT_DIR}/${USER} users/${USER}
+sudo chown -R ${USER} ${MOUNT_DIR}
 
-# set up nix 
 sudo mkdir -p ~/.config/nix
 sudo touch ~/.config/nix/nix.conf
 sudo echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
@@ -50,4 +55,4 @@ fi
 FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
 echo "Adding the following line to /etc/fstab:"
 echo "$FSTAB_ENTRY"
-#echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
+echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
