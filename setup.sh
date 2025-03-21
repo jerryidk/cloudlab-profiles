@@ -23,13 +23,6 @@ sudo mkdir -p ${MOUNT_DIR}/nix
 sudo mount --bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
-
-sudo mkdir -p ${MOUNT_DIR}/${USER}
-sudo chown -R ${USER} ${MOUNT_DIR}
-rsync -a --progress users/${USER} ${MOUNT_DIR}/${USER}
-sudo rm -rf users/${USER}
-sudo mkdir -p users/${USER}
-sudo mount --bind ${MOUNT_DIR}/${USER} users/${USER}
 sudo chown -R ${USER} ${MOUNT_DIR}
 
 sudo mkdir -p ~/.config/nix
@@ -44,6 +37,7 @@ cd ${MOUNT_DIR}
 git clone https://github.com/mars-research/DRAMHiT.git --recursive
 
 cd ${MOUNT_DIR}/DRAMHiT/
+direnv allow .
 sudo ./scripts/setup.sh
 
 UUID=$(sudo blkid -s UUID -o value $DEVICE)
