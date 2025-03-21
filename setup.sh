@@ -16,33 +16,38 @@ sudo mkfs.ext4 ${DISK}
 sudo mkdir -p ${MOUNT_DIR}
 sudo mount ${DISK} ${MOUNT_DIR}
 
-# permission
-sudo chown -R ${USER} ${MOUNT_DIR}
-
-# update apt just in case  
-sudo apt update
-
 # install nix.
 sudo mkdir -p /nix
 sudo mkdir -p ${MOUNT_DIR}/nix
-sudo mount -o bind ${MOUNT_DIR}/nix /nix
+sudo mount --bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
+
+
+sudo mkdir -p ${MOUNT_DIR}/${USER}
+sudo chown -R ${USER} ${MOUNT_DIR}
 
 # set up nix 
 sudo mkdir -p ~/.config/nix
 sudo touch ~/.config/nix/nix.conf
 sudo echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
-
-# direnv
-sudo apt install direnv
 sudo echo "eval $(direnv hook bash)" >> ~/.bashrc 
+
+sudo apt update
+sudo apt install direnv
 
 cd ${MOUNT_DIR}
 git clone https://github.com/mars-research/DRAMHiT.git --recursive
 
-cd ${MOUNT_DIR}/DRAMHiT/tools/msr-safe
-make 
-sudo insmod msr-safe.ko
-
 cd ${MOUNT_DIR}/DRAMHiT/
 sudo ./scripts/setup.sh
+
+UUID=$(sudo blkid -s UUID -o value $DEVICE)
+if [ -z "$UUID" ]; then
+    echo "Failed to retrieve UUID for $DEVICE"
+    exit 1
+fi
+
+FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
+echo "Adding the following line to /etc/fstab:"
+echo "$FSTAB_ENTRY"
+#echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
