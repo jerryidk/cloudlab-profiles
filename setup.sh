@@ -23,18 +23,20 @@ sudo mkdir -p ${MOUNT_DIR}/nix
 sudo mount --bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
-sudo chown -R ${USER} ${MOUNT_DIR}
-
-sudo mkdir -p ~/.config/nix
-sudo touch ~/.config/nix/nix.conf
-sudo echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
-sudo echo "eval $(direnv hook bash)" >> ~/.bashrc 
-
 sudo apt update
 sudo apt install direnv
 
+mkdir -p ~/.config/nix
+touch ~/.config/nix/nix.conf
+echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
+echo "eval $(direnv hook bash)" >> ~/.bashrc 
+
+source ~/.bashrc
+
 cd ${MOUNT_DIR}
 git clone https://github.com/mars-research/DRAMHiT.git --recursive
+
+sudo chown -R ${USER} ${MOUNT_DIR}
 
 cd ${MOUNT_DIR}/DRAMHiT/
 direnv allow .
