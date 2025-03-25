@@ -33,10 +33,9 @@ echo "eval $(direnv hook bash)" >> ~/.bashrc
 
 source ~/.bashrc
 
+sudo chown -R ${USER} ${MOUNT_DIR}
 cd ${MOUNT_DIR}
 git clone https://github.com/mars-research/DRAMHiT.git --recursive
-
-sudo chown -R ${USER} ${MOUNT_DIR}
 
 cd ${MOUNT_DIR}/DRAMHiT/
 direnv allow .
