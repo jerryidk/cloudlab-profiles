@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set -e
 # Note: cloudlab boot user with 16GB boot partiiton
 # sda4 has more storage, need to set this up as MOUNT_DIR 
 MOUNT_DIR=/opt
@@ -23,15 +22,15 @@ sudo mkdir -p ${MOUNT_DIR}/nix
 sudo mount --bind ${MOUNT_DIR}/nix /nix
 yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 
+# set up direnv
 sudo apt update
 sudo apt install direnv
 
-mkdir -p ~/.config/nix
-touch ~/.config/nix/nix.conf
-echo "experimental-features = nix-command flakes" > ~/.config/nix/nix.conf
-echo "eval $(direnv hook bash)" >> ~/.bashrc 
-
-source ~/.bashrc
+mkdir -p /home/${USER}/.config/nix
+touch /home/${USER}/.config/nix/nix.conf
+echo "experimental-features = nix-command flakes" > /home/${USER}/.config/nix/nix.conf
+sed -i '1ieval "$(direnv hook bash)"' /home/${USER}/.bashrc
+source /home/${USER}/.bashrc
 
 sudo chown -R ${USER} ${MOUNT_DIR}
 cd ${MOUNT_DIR}
@@ -39,11 +38,12 @@ git clone https://github.com/mars-research/DRAMHiT.git --recursive
 
 cd ${MOUNT_DIR}/DRAMHiT/
 direnv allow .
-sudo ./scripts/setup.sh
+./scripts/setup.sh
 
-UUID=$(sudo blkid -s UUID -o value $DEVICE)
+# save partition 
+UUID=$(sudo blkid -s UUID -o value $DISK)
 if [ -z "$UUID" ]; then
-    echo "Failed to retrieve UUID for $DEVICE"
+    echo "Failed to retrieve UUID for $DISK"
     exit 1
 fi
 
