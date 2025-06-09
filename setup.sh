@@ -5,6 +5,7 @@
 MOUNT_DIR=/opt
 USER=jerryidk # CHANGE ME
 DISK=/dev/nvme0n1p4 # CHANGE ME
+HOME=/users/${USER}
 
 # ensures sudo privilege
 if [[ ${SUDO_GID} == "" ]]; then
@@ -26,19 +27,14 @@ yes | sh <(curl -L https://nixos.org/nix/install) --daemon
 sudo apt update
 sudo apt install direnv
 
-mkdir -p /home/${USER}/.config/nix
-touch /home/${USER}/.config/nix/nix.conf
-echo "experimental-features = nix-command flakes" > /home/${USER}/.config/nix/nix.conf
-sed -i '1ieval "$(direnv hook bash)"' /home/${USER}/.bashrc
-source /home/${USER}/.bashrc
+mkdir -p ${HOME}/.config/nix
+touch ${HOME}/.config/nix/nix.conf
+echo "experimental-features = nix-command flakes" > /${HOME}/.config/nix/nix.conf
+sed -i '1ieval "$(direnv hook bash)"' ${HOME}/.bashrc
 
 sudo chown -R ${USER} ${MOUNT_DIR}
 cd ${MOUNT_DIR}
 git clone https://github.com/mars-research/DRAMHiT.git --recursive
-
-cd ${MOUNT_DIR}/DRAMHiT/
-direnv allow .
-./scripts/setup.sh
 
 # save partition 
 UUID=$(sudo blkid -s UUID -o value $DISK)
@@ -48,6 +44,4 @@ if [ -z "$UUID" ]; then
 fi
 
 FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
-echo "Adding the following line to /etc/fstab:"
-echo "$FSTAB_ENTRY"
 echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
