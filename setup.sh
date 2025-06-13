@@ -28,11 +28,10 @@ sudo apt update
 sudo apt install direnv
 
 mkdir -p ${HOME}/.config/nix
-touch ${HOME}/.config/nix/nix.conf
-echo "experimental-features = nix-command flakes" > /${HOME}/.config/nix/nix.conf
-sed -i '1ieval "$(direnv hook bash)"' ${HOME}/.bashrc
+#touch ${HOME}/.config/nix/nix.conf
+#echo "experimental-features = nix-command flakes" > /${HOME}/.config/nix/nix.conf
+#sed -i '1ieval "$(direnv hook bash)"' ${HOME}/.bashrc
 
-sudo chown -R ${USER} ${MOUNT_DIR}
 cd ${MOUNT_DIR}
 git clone https://github.com/mars-research/DRAMHiT.git --recursive
 
@@ -45,3 +44,5 @@ fi
 
 FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
 echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
+
+
