@@ -1,48 +1,126 @@
 #!/bin/bash
 
-# Note: cloudlab boot user with 16GB boot partiiton
-# sda4 has more storage, need to set this up as MOUNT_DIR 
-MOUNT_DIR=/opt
-USER=jerryidk # CHANGE ME
-DISK=/dev/nvme0n1p4 # CHANGE ME
-HOME=/users/${USER}
+# -------------------------
+# Configurable Variables
+# -------------------------
+MOUNT_DIR="/opt"
+USER="jerryidk"         # CHANGE ME
+DISK="/dev/nvme2n1p4"   # CHANGE ME
+HOME_DIR="/users/${USER}"
+LOGFILE="$HOME_DIR/script_log"
 
-# ensures sudo privilege
-if [[ ${SUDO_GID} == "" ]]; then
-  GROUP=$(id -g -n)
-fi
+# -------------------------
+# Logging Utility
+# -------------------------
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
+}
 
-# format filesystem and mount 
-sudo mkfs.ext4 ${DISK}
-sudo mkdir -p ${MOUNT_DIR}
-sudo mount ${DISK} ${MOUNT_DIR}
+# -------------------------
+# Check sudo availability
+# -------------------------
+check_sudo() {
+    if ! command -v sudo >/dev/null; then
+        log "ERROR: sudo is not installed or not in PATH."
+        exit 1
+    fi
+    if ! sudo -n true 2>/dev/null; then
+        log "INFO: This script needs sudo privileges for some operations."
+        sudo true || { log "ERROR: Failed to authenticate with sudo."; exit 1; }
+    fi
+}
 
-# install nix.
-sudo mkdir -p /nix
-sudo mkdir -p ${MOUNT_DIR}/nix
-sudo mount --bind ${MOUNT_DIR}/nix /nix
-yes | sh <(curl -L https://nixos.org/nix/install) --daemon
+# -------------------------
+# Create partition
+# -------------------------
+create_partition() {
+    log "Creating partition on /dev/nvme2n1..."
+    echo -e "n\n4\n\n\nw" | sudo fdisk /dev/nvme2n1 >> "$LOGFILE" 2>&1
+    log "Partition created."
+}
 
-# set up direnv
-sudo apt update
-sudo apt install direnv
+# -------------------------
+# Format and mount
+# -------------------------
+format_and_mount() {
+    log "Formatting $DISK as ext4..."
+    sudo mkfs.ext4 "$DISK" >> "$LOGFILE" 2>&1
 
-mkdir -p ${HOME}/.config/nix
-#touch ${HOME}/.config/nix/nix.conf
-#echo "experimental-features = nix-command flakes" > /${HOME}/.config/nix/nix.conf
-#sed -i '1ieval "$(direnv hook bash)"' ${HOME}/.bashrc
+    log "Mounting $DISK to $MOUNT_DIR..."
+    sudo mkdir -p "$MOUNT_DIR"
+    sudo mount "$DISK" "$MOUNT_DIR"
+}
 
-cd ${MOUNT_DIR}
-git clone https://github.com/mars-research/DRAMHiT.git --recursive
+# -------------------------
+# Install Nix
+# -------------------------
+install_nix() {
+    log "Installing Nix with daemon mode..."
+    sudo mkdir -p /nix "$MOUNT_DIR/nix"
+    sudo mount --bind "$MOUNT_DIR/nix" /nix
 
-# save partition 
-UUID=$(sudo blkid -s UUID -o value $DISK)
-if [ -z "$UUID" ]; then
-    echo "Failed to retrieve UUID for $DISK"
-    exit 1
-fi
+    yes | sh <(curl -L https://nixos.org/nix/install) --daemon >> "$LOGFILE" 2>&1
+    log "Nix installation complete."
+}
 
-FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
-echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
+# -------------------------
+# Set up direnv
+# -------------------------
+setup_direnv() {
+    log "Installing direnv and enabling flakes..."
+    sudo apt update >> "$LOGFILE" 2>&1
+    sudo apt install -y direnv >> "$LOGFILE" 2>&1
 
+    mkdir -p "$HOME_DIR/.config/nix"
+    echo "experimental-features = nix-command flakes" > "$HOME_DIR/.config/nix/nix.conf"
 
+    if ! grep -q 'direnv hook bash' "$HOME_DIR/.bashrc"; then
+        echo 'eval "$(direnv hook bash)"' >> "$HOME_DIR/.bashrc"
+    fi
+    log "direnv installed and configured."
+}
+
+# -------------------------
+# Clone DRAMHiT
+# -------------------------
+clone_dramhit() {
+    log "Cloning DRAMHiT into $MOUNT_DIR..."
+    sudo chown -R "$USER" "$MOUNT_DIR"
+    sudo -u "$USER" git clone https://github.com/mars-research/DRAMHiT.git --recursive "$MOUNT_DIR/DRAMHiT" >> "$LOGFILE" 2>&1
+    log "DRAMHiT repository cloned."
+}
+
+# -------------------------
+# Persist mount in fstab
+# -------------------------
+persist_mount() {
+    UUID=$(sudo blkid -s UUID -o value "$DISK")
+    if [ -z "$UUID" ]; then
+        log "ERROR: Failed to retrieve UUID for $DISK"
+        exit 1
+    fi
+
+    FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
+    if ! grep -q "$UUID" /etc/fstab; then
+        echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
+        log "fstab entry added: $FSTAB_ENTRY"
+    else
+        log "fstab entry already exists for $UUID"
+    fi
+}
+
+# -------------------------
+# Main Execution
+# -------------------------
+main() {
+    check_sudo
+    create_partition
+    format_and_mount
+    install_nix
+    setup_direnv
+    clone_dramhit
+    persist_mount
+    log "Setup complete. Reboot may be needed."
+}
+
+main "$@"
