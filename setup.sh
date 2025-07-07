@@ -14,7 +14,7 @@ run_step() {
 # -------------------------
 # Configurable Variables
 # -------------------------
-MOUNT_DIR="/opt"
+MOUNT_DIR="/opt"she
 USER=$(logname)
 HOME_DIR=$(getent passwd "$USER" | cut -d: -f6)
 LOGFILE="/dev/console"
@@ -27,22 +27,21 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
 }
 
-
 find_unpartitioned_disk() {
     for dev in $(lsblk -dn -o NAME); do
         if ! lsblk /dev/"$dev" | grep -q ├; then
             DISK="/dev/$dev"
-						return 0
+            return 0
         fi
     done
-		return 1
+    return 1
 }
 
 format_and_mount() {
-    mkfs.ext4 "$DISK" >> "$LOGFILE" 2>&1
+    mkfs.ext4 "$DISK" >>"$LOGFILE" 2>&1
     mkdir -p "$MOUNT_DIR"
     mount "$DISK" "$MOUNT_DIR"
-		return 0
+    return 0
 }
 
 # -------------------------
@@ -52,22 +51,22 @@ install_nix() {
     log "Installing Nix with daemon mode..."
     mkdir -p /nix "$MOUNT_DIR/nix"
     mount --bind "$MOUNT_DIR/nix" /nix
-    yes | sh <(curl -L https://nixos.org/nix/install) --daemon >> "$LOGFILE" 2>&1
-		return 0
+    yes | sh <(curl -L https://nixos.org/nix/install) --daemon >>"$LOGFILE" 2>&1
+    return 0
 }
 
 # -------------------------
 # Set up direnv
 # -------------------------
 setup_direnv() {
-    apt update >> "$LOGFILE" 2>&1
-    apt install -y direnv >> "$LOGFILE" 2>&1
+    apt update >>"$LOGFILE" 2>&1
+    apt install -y direnv >>"$LOGFILE" 2>&1
     mkdir -p "$HOME_DIR/.config/nix"
-    echo "experimental-features = nix-command flakes" > "$HOME_DIR/.config/nix/nix.conf"
+    echo "experimental-features = nix-command flakes" >"$HOME_DIR/.config/nix/nix.conf"
     if ! grep -q 'direnv hook bash' "$HOME_DIR/.bashrc"; then
-        echo 'eval "$(direnv hook bash)"' >> "$HOME_DIR/.bashrc"
+        echo 'eval "$(direnv hook bash)"' >>"$HOME_DIR/.bashrc"
     fi
-		return 0
+    return 0
 }
 
 # -------------------------
@@ -75,8 +74,8 @@ setup_direnv() {
 # -------------------------
 clone_dramhit() {
     chown -R "$USER" "$MOUNT_DIR"
-    sudo -u "$USER" git clone https://github.com/mars-research/DRAMHiT.git --recursive "$MOUNT_DIR/DRAMHiT" >> "$LOGFILE" 2>&1
-		return 0
+    sudo -u "$USER" git clone https://github.com/mars-research/DRAMHiT.git --recursive "$MOUNT_DIR/DRAMHiT" >>"$LOGFILE" 2>&1
+    return 0
 }
 
 # -------------------------
@@ -91,20 +90,20 @@ persist_mount() {
 
     FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
     if ! grep -q "$UUID" /etc/fstab; then
-        echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab > /dev/null
+        echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab >/dev/null
         log "fstab entry added: $FSTAB_ENTRY"
     else
         log "fstab entry already exists for $UUID"
     fi
 
-		return 0
+    return 0
 }
 
 # -------------------------
 # Main Execution
 # -------------------------
 main() {
-		run_step find_unpartitioned_disk
+    run_step find_unpartitioned_disk
     # run_step create_partition
     run_step format_and_mount
     run_step install_nix
