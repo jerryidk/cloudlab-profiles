@@ -4,9 +4,9 @@
 # Configurable Variables
 # -------------------------
 MOUNT_DIR="/opt"
-USER="jerryidk"         # CHANGE ME
-DISK="/dev/nvme2n1p4"   # CHANGE ME
-HOME_DIR="/users/${USER}"
+USER=$(logname)
+HOME_DIR=$(getent passwd "$USER" | cut -d: -f6)
+DISK=$(lsblk -ndo NAME,TYPE | awk '$2=="disk" {print "/dev/"$1; exit}')
 LOGFILE="$HOME_DIR/script_log"
 
 # -------------------------
@@ -17,25 +17,11 @@ log() {
 }
 
 # -------------------------
-# Check sudo availability
-# -------------------------
-check_sudo() {
-    if ! command -v sudo >/dev/null; then
-        log "ERROR: sudo is not installed or not in PATH."
-        exit 1
-    fi
-    if ! sudo -n true 2>/dev/null; then
-        log "INFO: This script needs sudo privileges for some operations."
-        sudo true || { log "ERROR: Failed to authenticate with sudo."; exit 1; }
-    fi
-}
-
-# -------------------------
 # Create partition
 # -------------------------
 create_partition() {
-    log "Creating partition on /dev/nvme2n1..."
-    echo -e "n\n4\n\n\nw" | sudo fdisk /dev/nvme2n1 >> "$LOGFILE" 2>&1
+    log "Creating partition on $DISK"
+    echo -e "n\n4\n\n\nw" | fdisk $DISK >> "$LOGFILE" 2>&1
     log "Partition created."
 }
 
@@ -44,11 +30,11 @@ create_partition() {
 # -------------------------
 format_and_mount() {
     log "Formatting $DISK as ext4..."
-    sudo mkfs.ext4 "$DISK" >> "$LOGFILE" 2>&1
+    mkfs.ext4 "$DISK" >> "$LOGFILE" 2>&1
 
     log "Mounting $DISK to $MOUNT_DIR..."
-    sudo mkdir -p "$MOUNT_DIR"
-    sudo mount "$DISK" "$MOUNT_DIR"
+    mkdir -p "$MOUNT_DIR"
+    mount "$DISK" "$MOUNT_DIR"
 }
 
 # -------------------------
@@ -56,8 +42,8 @@ format_and_mount() {
 # -------------------------
 install_nix() {
     log "Installing Nix with daemon mode..."
-    sudo mkdir -p /nix "$MOUNT_DIR/nix"
-    sudo mount --bind "$MOUNT_DIR/nix" /nix
+    mkdir -p /nix "$MOUNT_DIR/nix"
+    mount --bind "$MOUNT_DIR/nix" /nix
 
     yes | sh <(curl -L https://nixos.org/nix/install) --daemon >> "$LOGFILE" 2>&1
     log "Nix installation complete."
@@ -68,8 +54,8 @@ install_nix() {
 # -------------------------
 setup_direnv() {
     log "Installing direnv and enabling flakes..."
-    sudo apt update >> "$LOGFILE" 2>&1
-    sudo apt install -y direnv >> "$LOGFILE" 2>&1
+    apt update >> "$LOGFILE" 2>&1
+    apt install -y direnv >> "$LOGFILE" 2>&1
 
     mkdir -p "$HOME_DIR/.config/nix"
     echo "experimental-features = nix-command flakes" > "$HOME_DIR/.config/nix/nix.conf"
@@ -85,7 +71,7 @@ setup_direnv() {
 # -------------------------
 clone_dramhit() {
     log "Cloning DRAMHiT into $MOUNT_DIR..."
-    sudo chown -R "$USER" "$MOUNT_DIR"
+    chown -R "$USER" "$MOUNT_DIR"
     sudo -u "$USER" git clone https://github.com/mars-research/DRAMHiT.git --recursive "$MOUNT_DIR/DRAMHiT" >> "$LOGFILE" 2>&1
     log "DRAMHiT repository cloned."
 }
@@ -113,7 +99,6 @@ persist_mount() {
 # Main Execution
 # -------------------------
 main() {
-    check_sudo
     create_partition
     format_and_mount
     install_nix
