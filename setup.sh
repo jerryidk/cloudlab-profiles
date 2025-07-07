@@ -1,13 +1,24 @@
 #!/bin/bash
 
+set -euo pipefail
+
+run_step() {
+    "$@"
+    local status=$?
+    if [ $status -ne 0 ]; then
+        log "ERROR: Step '$*' failed with exit code $status"
+        exit $status
+    fi
+}
+
 # -------------------------
 # Configurable Variables
 # -------------------------
 MOUNT_DIR="/opt"
 USER=$(logname)
 HOME_DIR=$(getent passwd "$USER" | cut -d: -f6)
-DISK=$(lsblk -ndo NAME,TYPE | awk '$2=="disk" {print "/dev/"$1; exit}')
-LOGFILE="$HOME_DIR/script_log"
+LOGFILE="/dev/console"
+DISK=""
 
 # -------------------------
 # Logging Utility
@@ -16,25 +27,22 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
 }
 
-# -------------------------
-# Create partition
-# -------------------------
-create_partition() {
-    log "Creating partition on $DISK"
-    echo -e "n\n4\n\n\nw" | fdisk $DISK >> "$LOGFILE" 2>&1
-    log "Partition created."
+
+find_unpartitioned_disk() {
+    for dev in $(lsblk -dn -o NAME); do
+        if ! lsblk /dev/"$dev" | grep -q ├; then
+            DISK="/dev/$dev"
+						return 0
+        fi
+    done
+		return 1
 }
 
-# -------------------------
-# Format and mount
-# -------------------------
 format_and_mount() {
-    log "Formatting $DISK as ext4..."
     mkfs.ext4 "$DISK" >> "$LOGFILE" 2>&1
-
-    log "Mounting $DISK to $MOUNT_DIR..."
     mkdir -p "$MOUNT_DIR"
     mount "$DISK" "$MOUNT_DIR"
+		return 0
 }
 
 # -------------------------
@@ -44,36 +52,31 @@ install_nix() {
     log "Installing Nix with daemon mode..."
     mkdir -p /nix "$MOUNT_DIR/nix"
     mount --bind "$MOUNT_DIR/nix" /nix
-
     yes | sh <(curl -L https://nixos.org/nix/install) --daemon >> "$LOGFILE" 2>&1
-    log "Nix installation complete."
+		return 0
 }
 
 # -------------------------
 # Set up direnv
 # -------------------------
 setup_direnv() {
-    log "Installing direnv and enabling flakes..."
     apt update >> "$LOGFILE" 2>&1
     apt install -y direnv >> "$LOGFILE" 2>&1
-
     mkdir -p "$HOME_DIR/.config/nix"
     echo "experimental-features = nix-command flakes" > "$HOME_DIR/.config/nix/nix.conf"
-
     if ! grep -q 'direnv hook bash' "$HOME_DIR/.bashrc"; then
         echo 'eval "$(direnv hook bash)"' >> "$HOME_DIR/.bashrc"
     fi
-    log "direnv installed and configured."
+		return 0
 }
 
 # -------------------------
 # Clone DRAMHiT
 # -------------------------
 clone_dramhit() {
-    log "Cloning DRAMHiT into $MOUNT_DIR..."
     chown -R "$USER" "$MOUNT_DIR"
     sudo -u "$USER" git clone https://github.com/mars-research/DRAMHiT.git --recursive "$MOUNT_DIR/DRAMHiT" >> "$LOGFILE" 2>&1
-    log "DRAMHiT repository cloned."
+		return 0
 }
 
 # -------------------------
@@ -93,19 +96,21 @@ persist_mount() {
     else
         log "fstab entry already exists for $UUID"
     fi
+
+		return 0
 }
 
 # -------------------------
 # Main Execution
 # -------------------------
 main() {
-    create_partition
-    format_and_mount
-    install_nix
-    setup_direnv
-    clone_dramhit
-    persist_mount
-    log "Setup complete. Reboot may be needed."
+		run_step find_unpartitioned_disk
+    # run_step create_partition
+    run_step format_and_mount
+    run_step install_nix
+    run_step setup_direnv
+    run_step clone_dramhit
+    run_step persist_mount
 }
 
 main "$@"
