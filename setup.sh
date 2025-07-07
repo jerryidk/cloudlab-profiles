@@ -14,7 +14,7 @@ run_step() {
 # -------------------------
 # Configurable Variables
 # -------------------------
-MOUNT_DIR="/opt"she
+MOUNT_DIR="/opt"
 USER=$(logname)
 HOME_DIR=$(getent passwd "$USER" | cut -d: -f6)
 LOGFILE="/dev/console"
