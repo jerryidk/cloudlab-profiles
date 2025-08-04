@@ -7,7 +7,7 @@ MOUNT_DIR="/opt"
 USER=$(logname)
 HOME_DIR=$(getent passwd "$USER" | cut -d: -f6)
 LOGFILE="log.txt"
-DISK=""
+DISK="/dev/nvme2n1"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
@@ -34,15 +34,15 @@ find_unpartitioned_disk() {
 }
 
 format_and_mount() {
-    mkfs.ext4 "$DISK" >>"$LOGFILE" 2>&1
-    mkdir -p "$MOUNT_DIR"
-    mount "$DISK" "$MOUNT_DIR"
+    sudo mkfs.ext4 "$DISK" >>"$LOGFILE" 2>&1
+    sudo mkdir -p "$MOUNT_DIR"
+    sudo mount "$DISK" "$MOUNT_DIR"
     return 0
 }
 
 install_nix() {
-    mkdir -p /nix "$MOUNT_DIR/nix"
-    mount --bind "$MOUNT_DIR/nix" /nix
+    sudo mkdir -p /nix "$MOUNT_DIR/nix"
+    sudo mount --bind "$MOUNT_DIR/nix" /nix
     yes | sh <(curl -L https://nixos.org/nix/install) --daemon >>"$LOGFILE" 2>&1
     return 0
 }
@@ -84,7 +84,7 @@ persist_mount() {
 }
 
 main() {
-    run_step find_unpartitioned_disk
+    # run_step find_unpartitioned_disk
     run_step format_and_mount
     run_step install_nix
     run_step setup_direnv
