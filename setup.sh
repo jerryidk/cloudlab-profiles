@@ -86,10 +86,10 @@ persist_mount() {
 main() {
     # run_step find_unpartitioned_disk
     run_step format_and_mount
-    run_step install_nix
-    run_step setup_direnv
-    run_step clone_dramhit
     run_step persist_mount
+    run_step install_nix
+    # run_step setup_direnv
+    run_step clone_dramhit
 }
 
 main "$@"
