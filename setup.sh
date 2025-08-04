@@ -1,18 +1,18 @@
 #!/bin/bash
 
+
 # -------------------------
 # Configurable Variables
 # -------------------------
 MOUNT_DIR="/opt"
-USER=$(logname)
+USER=$(whoami)
 HOME_DIR=$(getent passwd "$USER" | cut -d: -f6)
-LOGFILE="log.txt"
+LOGFILE="/var/tmp/dramhit-setup.log"
 DISK="/dev/nvme2n1"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOGFILE"
 }
-
 
 run_step() {
     "$@"
@@ -23,20 +23,12 @@ run_step() {
     fi
 }
 
-find_unpartitioned_disk() {
-    for dev in $(lsblk -dn -o NAME); do
-        if ! lsblk /dev/"$dev" | grep -q ├; then
-            DISK="/dev/$dev"
-            return 0
-        fi
-    done
-    return 1
-}
-
 format_and_mount() {
-    sudo mkfs.ext4 "$DISK" >>"$LOGFILE" 2>&1
+		log "formatting $DISK and mounting $MOUNT_DIR"
+    sudo mkfs.ext4 "$DISK"
     sudo mkdir -p "$MOUNT_DIR"
     sudo mount "$DISK" "$MOUNT_DIR"
+		log "success!"
     return 0
 }
 
@@ -44,19 +36,6 @@ install_nix() {
     sudo mkdir -p /nix "$MOUNT_DIR/nix"
     sudo mount --bind "$MOUNT_DIR/nix" /nix
     yes | sh <(curl -L https://nixos.org/nix/install) --daemon >>"$LOGFILE" 2>&1
-    return 0
-}
-
-setup_direnv() {
-    sudo apt update >>"$LOGFILE" 2>&1
-    sudo apt install -y direnv >>"$LOGFILE" 2>&1
-    mkdir -p "$HOME_DIR/.config/nix"
-    echo "experimental-features = nix-command flakes" >"$HOME_DIR/.config/nix/nix.conf"
-    if ! grep -q 'direnv hook bash' "$HOME_DIR/.bashrc"; then
-        echo 'eval "$(direnv hook bash)"' >>"$HOME_DIR/.bashrc"
-		else
-				return 1
-    fi
     return 0
 }
 
@@ -84,11 +63,9 @@ persist_mount() {
 }
 
 main() {
-    # run_step find_unpartitioned_disk
     run_step format_and_mount
     run_step persist_mount
     run_step install_nix
-    # run_step setup_direnv
     run_step clone_dramhit
 }
 

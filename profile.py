@@ -20,7 +20,7 @@ node_0.hardware_type = 'd760' # CHANGE ME
 node_0.disk_image = 'urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU24-64-BETA'
 
 # Install and execute a script that is contained in the repository.
-node_0.addService(pg.Execute(shell="sh", command="/local/repository/setup.sh"))
+node_0.addService(pg.Execute(shell="bash", command="/local/repository/setup.sh"))
 
 # Print the generated rspec
 pc.printRequestRSpec(request)
