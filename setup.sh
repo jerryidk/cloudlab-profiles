@@ -5,7 +5,7 @@
 # Configurable Variables
 # -------------------------
 MOUNT_DIR="/opt"
-USER=$(whoami)
+USER=jerryidk #cloudlab will run set as geniuser, not actually user, so set your name here.
 HOME_DIR=$(getent passwd "$USER" | cut -d: -f6)
 LOGFILE="/var/tmp/dramhit-setup.log"
 DISK="/dev/nvme2n1"
@@ -23,25 +23,38 @@ run_step() {
     fi
 }
 
+find_unpartitioned_disk() {
+    for dev in $(lsblk -dn -o NAME); do
+        if ! lsblk /dev/"$dev" | grep -q ├; then
+            DISK="/dev/$dev"
+						log "found unpartitioned disk: $DISK"
+            return 0
+        fi
+    done
+    return 1
+}
+
+
 format_and_mount() {
-		log "formatting $DISK and mounting $MOUNT_DIR"
     sudo mkfs.ext4 "$DISK"
     sudo mkdir -p "$MOUNT_DIR"
     sudo mount "$DISK" "$MOUNT_DIR"
-		log "success!"
+		log "formatting and mount $DISK success!"
     return 0
 }
 
 install_nix() {
     sudo mkdir -p /nix "$MOUNT_DIR/nix"
     sudo mount --bind "$MOUNT_DIR/nix" /nix
-    yes | sh <(curl -L https://nixos.org/nix/install) --daemon >>"$LOGFILE" 2>&1
+    yes | sh <(curl -L https://nixos.org/nix/install) --daemon
+		log "setting up nix successfully on $MOUNT_DIR/nix"
     return 0
 }
 
 clone_dramhit() {
     sudo chown -R "$USER" "$MOUNT_DIR"
-    sudo -u "$USER" git clone https://github.com/mars-research/DRAMHiT.git --recursive "$MOUNT_DIR/DRAMHiT" >>"$LOGFILE" 2>&1
+    sudo -u "$USER" git clone https://github.com/mars-research/DRAMHiT.git --recursive "$MOUNT_DIR/DRAMHiT"
+		log "setting up dramhit successfully on $MOUNT_DIR/DRAMHiT"
     return 0
 }
 
@@ -59,10 +72,12 @@ persist_mount() {
 				return 1
     fi
 
+		log "Persist mount successfully entry added: $FSTAB_ENTRY"
     return 0
 }
 
 main() {
+		run_step find_unpartitioned_disk
     run_step format_and_mount
     run_step persist_mount
     run_step install_nix
