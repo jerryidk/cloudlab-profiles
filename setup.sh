@@ -23,6 +23,17 @@ run_step() {
     fi
 }
 
+check_already_setup() {
+    if grep -q "#MARKER" /etc/fstab; then
+        log "fstab already contains MARKER entry, terminate set up script"
+        return 1
+    else
+        log "MARKER not found in fstab, set up as normal"
+        return 0
+    fi
+}
+
+
 find_unpartitioned_disk() {
     for dev in $(lsblk -dn -o NAME); do
         if ! lsblk /dev/"$dev" | grep -q ├; then
@@ -47,6 +58,8 @@ install_nix() {
     sudo mkdir -p /nix "$MOUNT_DIR/nix"
     sudo mount --bind "$MOUNT_DIR/nix" /nix
     yes | sh <(curl -L https://nixos.org/nix/install) --daemon
+    # setup bind, so it persist reboot
+		echo "/opt/nix   /nix   none   bind   0   0" | sudo tee -a /etc/fstab >/dev/null
 		log "setting up nix successfully on $MOUNT_DIR/nix"
     return 0
 }
@@ -65,7 +78,7 @@ persist_mount() {
         return 1
     fi
 
-    FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2"
+    FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2	#MARKER"
     if ! grep -q "$UUID" /etc/fstab; then
         echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab >/dev/null
 		else
@@ -77,6 +90,7 @@ persist_mount() {
 }
 
 main() {
+		run_step check_already_setup
 		run_step find_unpartitioned_disk
     run_step format_and_mount
     run_step persist_mount
