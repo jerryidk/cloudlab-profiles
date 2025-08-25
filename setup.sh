@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # -------------------------
 # Configurable Variables
 # -------------------------
@@ -23,15 +22,6 @@ run_step() {
     fi
 }
 
-check_already_setup() {
-    if grep -q "#MARKER" /etc/fstab; then
-        log "fstab already contains MARKER entry, terminate set up script"
-        return 1
-    else
-        log "MARKER not found in fstab, set up as normal"
-        return 0
-    fi
-}
 
 
 find_unpartitioned_disk() {
@@ -58,8 +48,6 @@ install_nix() {
     sudo mkdir -p /nix "$MOUNT_DIR/nix"
     sudo mount --bind "$MOUNT_DIR/nix" /nix
     yes | sh <(curl -L https://nixos.org/nix/install) --daemon
-    # setup bind, so it persist reboot
-		echo "/opt/nix   /nix   none   bind   0   0" | sudo tee -a /etc/fstab >/dev/null
 		log "setting up nix successfully on $MOUNT_DIR/nix"
     return 0
 }
@@ -71,29 +59,10 @@ clone_dramhit() {
     return 0
 }
 
-persist_mount() {
-    UUID=$(sudo blkid -s UUID -o value "$DISK")
-    if [ -z "$UUID" ]; then
-        log "ERROR: Failed to retrieve UUID for $DISK"
-        return 1
-    fi
-
-    FSTAB_ENTRY="UUID=$UUID  $MOUNT_DIR  ext4  defaults  0 2	#MARKER"
-    if ! grep -q "$UUID" /etc/fstab; then
-        echo "$FSTAB_ENTRY" | sudo tee -a /etc/fstab >/dev/null
-		else
-				return 1
-    fi
-
-		log "Persist mount successfully entry added: $FSTAB_ENTRY"
-    return 0
-}
 
 main() {
-		run_step check_already_setup
 		run_step find_unpartitioned_disk
     run_step format_and_mount
-    run_step persist_mount
     run_step install_nix
     run_step clone_dramhit
 }
