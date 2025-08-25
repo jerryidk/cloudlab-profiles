@@ -4,23 +4,19 @@ Jerry's Custom cloudlab set up
 Instructions:
 Nothing to do here, look into .sh if you would like
 """	  
-# Import the Portal object.
 import geni.portal as portal
-# Import the ProtoGENI library.
 import geni.rspec.pg as pg
 
-# Create a portal context.
 pc = portal.Context()
-
-# Create a Request object to start building the RSpec.
 request = pc.makeRequestRSpec()
 
-node_0 = request.RawPC('node-0')
-node.node_type = "fixed"ode_0.hardware_type = 'd760' # CHANGE ME 
-node_0.disk_image = 'urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU24-64-STD'
+node = request.RawPC('flex14-node')
+node.component_id = "urn:publicid:IDN+utah.cloudlab.us+node+flex14"
+node.node_type = "fixed"
+node.disk_image = 'urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU24-64-STD'
 
 # Install and execute a script that is contained in the repository.
-node_0.addService(pg.Execute(shell="bash", command="/local/repository/setup.sh"))
+node.addService(pg.Execute(shell="bash", command="/local/repository/setup.sh"))
 
 # Print the generated rspec
 pc.printRequestRSpec(request)
