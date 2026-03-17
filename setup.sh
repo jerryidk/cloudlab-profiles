@@ -23,7 +23,6 @@ run_step() {
 }
 
 
-
 find_unpartitioned_disk() {
     for dev in $(lsblk -dn -o NAME); do
         if ! lsblk /dev/"$dev" | grep -q ├; then
@@ -34,7 +33,6 @@ find_unpartitioned_disk() {
     done
     return 1
 }
-
 
 format_and_mount() {
     sudo mkfs.ext4 "$DISK"
@@ -67,4 +65,4 @@ main() {
     run_step clone_dramhit
 }
 
-main "$@"
+# main "$@"
