@@ -12,7 +12,13 @@ pc = portal.Context()
 
 pc.defineParameter("hw_type", "Hardware Type", portal.ParameterType.NODETYPE, "")
 
-pc.defineParameter("os_image", "Operating System Image", portal.ParameterType.IMAGE, "")
+pc.defineParameter(
+    "os_image",
+    "Operating System Image",
+    portal.ParameterType.STRING,
+    "urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU24-64-STD",
+    longDescription="go to https://www.cloudlab.us/images.php, find urns",
+)
 
 params = pc.bindParameters()
 request = pc.makeRequestRSpec()
