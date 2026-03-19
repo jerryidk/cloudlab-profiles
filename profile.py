@@ -36,3 +36,4 @@ bs.size = "0"
 
 node.addService(pg.Execute(shell="bash", command="/local/repository/setup.sh"))
 
+pc.printRequestRSpec(request)
