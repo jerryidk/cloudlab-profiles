@@ -15,7 +15,7 @@ pc.defineParameter("hw_type", "Hardware Type", portal.ParameterType.NODETYPE, ""
 pc.defineParameter(
     "os_image",
     "Operating System Image",
-    portal.ParameterType.IMAGE,
+    portal.ParameterType.STRING,
     "urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU24-64-STD",
 )
 
@@ -27,7 +27,8 @@ node = request.RawPC("dramhit")
 if params.hw_type != "":
     node.hardware_type = params.hw_type
 
-node.disk_image = params.os_image
+if params.os_image != "":
+    node.disk_image = params.os_image
 
 node.addService(pg.Execute(shell="bash", command="/local/repository/setup.sh"))
 
