@@ -22,14 +22,14 @@ pc.defineParameter(
     "os_image",
     "Operating System Image",
     portal.ParameterType.IMAGE,
-    "urn:publicid:IDN+emulab.net+image+emulab-ops:UBUNTU24-64-STD",
+    "",
     longDescription="Select the base OS image. Ubuntu 24.04 (Kernel 6.8+) is the default."
 )
 
 params = pc.bindParameters()
 request = pc.makeRequestRSpec()
 
-node = request.RawPC('dramhit-amd')
+node = request.RawPC('dramhit')
 
 # 3. Apply the dynamic parameters
 if params.hw_type != "":
