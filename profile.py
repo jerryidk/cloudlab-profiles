@@ -30,6 +30,9 @@ if params.hw_type != "":
 if params.os_image != "":
     node.disk_image = params.os_image
 
+bs = node.Blockstore("bs", "/opt")
+# "Use all remaining unallocated disk space on this physical machine"
+bs.size = "0"
+
 node.addService(pg.Execute(shell="bash", command="/local/repository/setup.sh"))
 
-pc.printRequestRSpec(request)
